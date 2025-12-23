@@ -56,10 +56,17 @@ async function fetchAllData() {
             // Always try to fetch rich profile for snoovatar
             const currUser = await reddit.getCurrentUser();
             if (currUser) {
+                let snoovatarUrl;
+                try {
+                    snoovatarUrl = await currUser.getSnoovatarUrl();
+                } catch(e) {
+                    try { snoovatarUrl = await reddit.getSnoovatarUrl(currUser.username); } catch(e2) {}
+                }
+
                 user = {
                     id: currUser.id,
                     username: currUser.username,
-                    avatar_url: currUser.snoovatarImage || user.avatar_url
+                    avatar_url: snoovatarUrl || user.avatar_url
                 };
             }
         } catch(e) { 

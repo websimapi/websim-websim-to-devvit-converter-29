@@ -212,9 +212,18 @@ export const websimSocketPolyfill = `
         
         create = async (data) => {
             const id = Math.random().toString(36).substr(2, 12);
+            
+            // Enforce Reddit Identity on content creation
+            const enhancedData = { ...data };
+            if (window._currentUser) {
+                if (enhancedData.username) enhancedData.username = window._currentUser.username;
+                if (enhancedData.avatar_url) enhancedData.avatar_url = window._currentUser.avatar_url;
+                if (enhancedData.user_id) enhancedData.user_id = window._currentUser.id;
+            }
+
             const record = { 
                 id, 
-                ...data, 
+                ...enhancedData, 
                 created_at: new Date().toISOString() 
             };
             window.GenericDB.save(this.name, id, record);
