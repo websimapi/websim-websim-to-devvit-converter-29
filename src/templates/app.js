@@ -93,6 +93,11 @@ router.get('/api/user', async (_req, res) => {
     res.json(user);
 });
 
+router.get('/api/identity', async (_req, res) => {
+    const { user } = await fetchAllData();
+    res.json(user);
+});
+
 router.post('/api/save', async (req, res) => {
     try {
         const { collection, key, value } = req.body;

@@ -190,7 +190,29 @@ export class AssetAnalyzer {
                         }
                     }
                 },
-                Literal: rewritePaths
+                Literal: rewritePaths,
+                TemplateLiteral: (node) => {
+                    // Smart Swap: Detect Avatar URLs (either original WebSim or Regex-replaced Redditstatic)
+                    // Pattern: `.../avatar/${user.username}` OR `.../avatar_default...?user=${user.username}`
+                    if (node.quasis.length === 2 && node.expressions.length === 1) {
+                        const prefix = node.quasis[0].value.raw;
+                        const isWebSim = prefix.includes('images.websim.ai/avatar/') || prefix.includes('images.websim.com/avatar/');
+                        const isSwapped = prefix.includes('redditstatic.com/avatars/') && prefix.includes('?user=');
+                        
+                        if (isWebSim || isSwapped) {
+                            const expr = node.expressions[0];
+                            // Check if expression is accessing a 'username' property (e.g. post.username)
+                            if (expr.type === 'MemberExpression' && expr.property.type === 'Identifier' && expr.property.name === 'username') {
+                                // Extract the object part (e.g. "post")
+                                const objectCode = code.slice(expr.object.start, expr.object.end);
+                                // Replace the entire template literal with the avatar_url property
+                                const replacement = `(${objectCode}.avatar_url || "https://www.redditstatic.com/avatars/avatar_default_02_FF4500.png")`;
+                                magic.overwrite(node.start, node.end, replacement);
+                                hasChanges = true;
+                            }
+                        }
+                    }
+                }
             });
 
         } catch (e) {
